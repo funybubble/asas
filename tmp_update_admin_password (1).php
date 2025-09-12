@@ -1,5 +1,4 @@
 <?php
-// Update admin password hash safely using the correct DB path
 $db = __DIR__ . '/cebelarstvo_cigoj.db';
 $pdo = new PDO('sqlite:' . $db);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -8,7 +7,5 @@ $stmt = $pdo->prepare('UPDATE admin_users SET password_hash = ? WHERE username =
 $stmt->execute([$hash, 'admin']);
 $row = $pdo->query("SELECT id, username, password_hash FROM admin_users WHERE username='admin'")->fetch(PDO::FETCH_ASSOC);
 print_r($row);
-// Verify password locally
-var_export(password_verify('secret123', $row['password_hash']));
 echo "\n";
 ?>

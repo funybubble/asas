@@ -1,0 +1,70 @@
+// Cart Fix Script - Connects the "V košarico" buttons to cart functionality
+document.addEventListener('DOMContentLoaded', function(){
+  function parsePrice(text){
+    const m = text && text.match(/([\d.,]+)\s*€/);
+    return m ? parseFloat(m[1].replace(/\./g,'').replace(',', '.')) : 0;
+  }
+  
+  // Do NOT generate fake product IDs. Use the real data-product-id from backend-rendered HTML.
+  
+  // Fallback mapping: product name -> actual DB id
+  const PRODUCT_NAME_TO_ID = {
+    'Cvetni prah 50g': '1',
+    'Cvetni prah 100g': '1',
+    'Cvetni prah': '1',
+    'Balzam za ustnice iz čebeljega voska': '2',
+    'Balzam za ustnice': '2',
+    'Balzam': '2',
+    'Med ajdov': '3',
+    'Med': '3',
+    'Med ajdov ': '3'
+  };
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if (!btn || !/V košarico/i.test(btn.textContent)) return;
+    e.preventDefault();
+    
+    // Find the exact product container this button belongs to
+    const card = btn.closest('.product-card, .group');
+    if (!card) {
+      console.log('No product card found');
+      return;
+    }
+    
+    const nameEl = card.querySelector('h3');
+    const priceEl = card.querySelector('p[class*="amber-700"], p[class*="font-bold"]') || 
+                   Array.from(card.querySelectorAll('p')).find(p => /€/.test(p.textContent));
+    
+    const name = nameEl ? nameEl.textContent.trim() : 'Izdelek';
+    const price = parsePrice(priceEl ? priceEl.textContent : '0');
+    
+    // Use the real productId from the HTML attribute; if missing, fall back to name->id map
+    let id = card.getAttribute('data-product-id');
+    if (!id) {
+      id = PRODUCT_NAME_TO_ID[name] || null;
+    }
+
+    if (!id) {
+      console.warn('No product id found for item, skipping add to cart', name);
+      return;
+    }
+
+    console.log('Adding to cart:', {id, name, price});
+    addToCart(id, name, price);
+    updateCartCount();
+    
+    // Visual feedback
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i data-feather="check" class="mr-1 w-4 h-4"></i> Dodano!';
+    btn.style.backgroundColor = '#10b981';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.style.backgroundColor = '';
+        btn.disabled = false;
+        feather.replace();
+    }, 2000);
+  });
+});

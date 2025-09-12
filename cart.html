@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Košarica | Čebelarstvo Cigoj</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Header -->
+    <header class="bg-amber-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2">
+                    <i data-feather="hexagon" class="text-amber-300"></i>
+                    <h1 class="text-xl font-bold">Čebelarstvo Cigoj</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i data-feather="shopping-cart" class="text-amber-200 w-6 h-6"></i>
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-amber-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                    </div>
+                    <a href="index.html" class="text-amber-200 hover:text-white transition">
+                        <i data-feather="arrow-left" class="mr-2"></i>Nazaj v trgovino
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Cart Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-amber-900 mb-6">Vaša košarica</h2>
+            
+            <div id="cart-content">
+                <!-- Cart items will be loaded here by JavaScript -->
+            </div>
+            
+            <div id="cart-summary" class="bg-white rounded-lg shadow p-6 mt-6 hidden">
+                <div class="flex justify-between items-center text-lg font-bold mb-4">
+                    <span>Skupaj:</span>
+                    <span id="total-amount">0.00€</span>
+                </div>
+                <button onclick="proceedToCheckout()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 px-4 rounded-lg font-medium transition">
+                    Nadaljuj s plačilom
+                </button>
+            </div>
+
+            <div id="empty-cart" class="bg-white rounded-lg shadow p-6 text-center hidden">
+                <p class="text-gray-600 mb-4">Vaša košarica je prazna</p>
+                <a href="index.html" class="text-amber-600 hover:text-amber-800">Nazaj v trgovino</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function loadCart() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartContent = document.getElementById('cart-content');
+            const cartSummary = document.getElementById('cart-summary');
+            const emptyCart = document.getElementById('empty-cart');
+            
+            if (cart.length === 0) {
+                emptyCart.classList.remove('hidden');
+                cartSummary.classList.add('hidden');
+                return;
+            }
+            
+            let total = 0;
+            let html = '<div class="bg-white rounded-lg shadow overflow-hidden">';
+            html += '<div class="grid grid-cols-4 gap-4 p-4 bg-gray-50 font-medium">';
+            html += '<div>Izdelek</div><div>Cena</div><div>Količina</div><div>Skupaj</div>';
+            html += '</div>';
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                
+                html += `<div class="grid grid-cols-4 gap-4 p-4 border-t border-gray-200 items-center">`;
+                html += `<div class="font-medium">${item.name}</div>`;
+                html += `<div>${item.price.toFixed(2)}€</div>`;
+                html += `<div class="flex items-center space-x-2">`;
+                html += `<button onclick="updateQuantity(${index}, -1)" class="bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded flex items-center justify-center">-</button>`;
+                html += `<span class="mx-2">${item.quantity}</span>`;
+                html += `<button onclick="updateQuantity(${index}, 1)" class="bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded flex items-center justify-center">+</button>`;
+                html += `</div>`;
+                html += `<div class="flex justify-between items-center">`;
+                html += `<span>${itemTotal.toFixed(2)}€</span>`;
+                html += `<button onclick="removeItem(${index})" class="text-red-600 hover:text-red-800 ml-4">`;
+                html += `<i data-feather="trash-2"></i></button>`;
+                html += `</div></div>`;
+            });
+            
+            html += '</div>';
+            cartContent.innerHTML = html;
+            document.getElementById('total-amount').textContent = total.toFixed(2) + '€';
+            cartSummary.classList.remove('hidden');
+            
+            feather.replace();
+        }
+        
+        function updateQuantity(index, change) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart[index].quantity += change;
+            
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+            updateCartCount();
+        }
+        
+        function removeItem(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+            updateCartCount();
+        }
+        
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const count = cart.reduce((total, item) => total + item.quantity, 0);
+            const cartCount = document.getElementById('cart-count');
+            
+            if (cartCount) {
+                cartCount.textContent = count;
+                if(count > 0) {
+                    cartCount.classList.remove('hidden');
+                } else {
+                    cartCount.classList.add('hidden');
+                }
+            }
+        }
+        
+        function proceedToCheckout() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) {
+                alert('Vaša košarica je prazna');
+                return;
+            }
+            // Redirect to checkout page
+            window.location.href = 'checkout.php';
+        }
+        
+        // Load cart on page load
+        loadCart();
+        feather.replace();
+    </script>
+</body>
+</html>
